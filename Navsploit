@@ -448,165 +448,6 @@ Tabs.RCFA:AddToggle("VisibleHB", {
     end
 end)
 
----------------------------------------------------
--- RCFA AUTO / RB STUN SECTION
----------------------------------------------------
-
-local RCFA = LocalPlayer
-local Character = RCFA.Character or RCFA.CharacterAdded:Wait()
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-
--- Auto Unstun / RB Stun Variables
-local autoUnstunEnabled = false
-local rbStunEnabled = false
-local STUN_RADIUS = 1 -- studs around you
-local STUN_TIME = 3 -- seconds
-
--- =====================
--- AUTO UNSTUN FUNCTION
--- =====================
-local function autoUnstun()
-    while autoUnstunEnabled and RCFA.Character do
-        local char = RCFA.Character
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-        end
-        -- Ensure Downed.Value is always false
-        if char:FindFirstChild("Hitbox") and char.Hitbox:FindFirstChild("CharacterValues") then
-            local downedVal = char.Hitbox.CharacterValues:FindFirstChild("Downed")
-            if downedVal then
-                downedVal.Value = false
-            end
-        end
-        task.wait(0.1)
-    end
-end
-
--- =====================
--- RB STUN FUNCTION
--- =====================
-local function applyStunAura()
-    local myChar = RCFA.Character
-    if not myChar then return end
-    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
-
-    local startTime = tick()
-    task.spawn(function()
-        while tick() - startTime < STUN_TIME do
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr ~= RCFA then
-                    local char = plr.Character
-                    if char and char:FindFirstChild("HumanoidRootPart") then
-                        local dist = (char.HumanoidRootPart.Position - myRoot.Position).Magnitude
-                        if dist <= STUN_RADIUS then
-                            local cv = char:FindFirstChild("CharacterValues")
-                            if cv then
-                                -- Force Downed to false
-                                local downedVal = cv:FindFirstChild("Downed")
-                                if downedVal then
-                                    downedVal.Value = false
-                                end
-                                -- Also reset Tackle if exists
-                                if cv:FindFirstChild("Tackle") then
-                                    cv.Tackle.Value = false
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-            task.wait(0.05)
-        end
-    end)
-end
-
--- =====================
--- RCFA TAB TOGGLES
--- =====================
-Tabs.RCFA:AddToggle("AutoUnstunToggle", {
-    Title = "Auto Unstun",
-    Default = false
-}):OnChanged(function(state)
-    if not allowedUsers[RCFA.Name] then return end
-    autoUnstunEnabled = state
-    if state then
-        task.spawn(autoUnstun)
-        Fluent:Notify({Title="RCFA", Content="Auto Unstun Enabled", Duration=2})
-    else
-        Fluent:Notify({Title="RCFA", Content="Auto Unstun Disabled", Duration=2})
-    end
-end)
-
-Tabs.RCFA:AddToggle("RBStunToggle", {
-    Title = "RB Stun (Aura)",
-    Default = false
-}):OnChanged(function(state)
-    if not allowedUsers[RCFA.Name] then return end
-    rbStunEnabled = state
-    local char = RCFA.Character
-    if not char then return end
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not humanoid or not root then return end
-
-    if rbStunEnabled then
-        -- STUN: disable hitbox temporarily and make invincible
-        if root:FindFirstChild("Hitbox") then
-            root.Hitbox.CanCollide = false
-            root.Hitbox.CanTouch = false
-            -- Force Downed to false
-            if root.Hitbox:FindFirstChild("CharacterValues") then
-                local downedVal = root.Hitbox.CharacterValues:FindFirstChild("Downed")
-                if downedVal then
-                    downedVal.Value = false
-                end
-            end
-        end
-        if not char:FindFirstChild("CharacterValues") then
-            local cv = Instance.new("Folder")
-            cv.Name = "CharacterValues"
-            cv.Parent = char
-        end
-        local cv = char.CharacterValues
-        if not cv:FindFirstChild("Invincible") then
-            local inv = Instance.new("BoolValue")
-            inv.Name = "Invincible"
-            inv.Value = true
-            inv.Parent = cv
-        else
-            cv.Invincible.Value = true
-        end
-        humanoid.PlatformStand = true
-        applyStunAura()
-    else
-        -- UNSTUN: restore hitbox and normal state
-        if root:FindFirstChild("Hitbox") then
-            root.Hitbox.CanCollide = false
-            root.Hitbox.CanTouch = true
-            -- Ensure Downed is false on unstun
-            if root.Hitbox:FindFirstChild("CharacterValues") then
-                local downedVal = root.Hitbox.CharacterValues:FindFirstChild("Downed")
-                if downedVal then
-                    downedVal.Value = false
-                end
-            end
-        end
-        if char:FindFirstChild("CharacterValues") and char.CharacterValues:FindFirstChild("Invincible") then
-            char.CharacterValues.Invincible.Value = false
-        end
-        humanoid.PlatformStand = false
-    end
-
-    Fluent:Notify({
-        Title = "RCFA",
-        Content = "RB Stun: "..(rbStunEnabled and "Enabled" or "Disabled"),
-        Duration = 2
-    })
-end)
 
 -- =====================
 -- REAPPLY ON RESPAWN
@@ -944,6 +785,88 @@ RCFA.CharacterAdded:Connect(function(char)
     end
 end)
 
+
+Tabs.RCFA:AddSection("Auto Stun Controls")
+
+local autoStunEnabled = false
+local autoStunBind = Enum.KeyCode.RightControl
+local waitingForAutoStunBind = false
+
+local function setAutoStun(state)
+    autoStunEnabled = state
+    autoUnstunEnabled = state
+    rbStunEnabled = state
+
+    if state then
+        task.spawn(autoUnstun)
+        applyStunAura()
+    end
+
+    Fluent:Notify({
+        Title = "Navsploit",
+        Content = "Auto Stun "..(state and "Enabled" or "Disabled"),
+        Duration = 2
+    })
+end
+
+-- UI Toggle
+local autoStunToggle = Tabs.RCFA:AddToggle("AutoStunToggle", {
+    Title = "Auto Stun (RB + Unstun)",
+    Default = false
+})
+
+autoStunToggle:OnChanged(function(state)
+    setAutoStun(state)
+end)
+
+-- Bind Button
+Tabs.RCFA:AddButton({
+    Title = "Set Auto Stun Key",
+    Description = "Press a key or controller button",
+    Callback = function()
+        waitingForAutoStunBind = true
+        Fluent:Notify({
+            Title = "Navsploit",
+            Content = "Press a key to bind Auto Stun...",
+            Duration = 3
+        })
+    end
+})
+
+-- Input Listener
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+
+    if waitingForAutoStunBind then
+        autoStunBind =
+            input.KeyCode ~= Enum.KeyCode.Unknown
+            and input.KeyCode
+            or input.UserInputType
+
+        waitingForAutoStunBind = false
+
+        Fluent:Notify({
+            Title = "Navsploit",
+            Content = "Auto Stun key set to: "..tostring(autoStunBind),
+            Duration = 2
+        })
+        return
+    end
+
+    if input.KeyCode == autoStunBind or input.UserInputType == autoStunBind then
+        autoStunEnabled = not autoStunEnabled
+        autoStunToggle:SetValue(autoStunEnabled)
+        setAutoStun(autoStunEnabled)
+    end
+end)
+
+-- Respawn support
+RCFA.CharacterAdded:Connect(function()
+    task.wait(1)
+    if autoStunEnabled then
+        setAutoStun(true)
+    end
+end)
 ---------------------------------------------------
 -- NUVSAv.2 SECTION
 ---------------------------------------------------
@@ -1159,96 +1082,98 @@ end)
 
 
 ---------------------------------------------------
--- SETTINGS TAB FIXED & THEME SWITCH
+-- SETTINGS TAB (FIXED)
 ---------------------------------------------------
 local SettingsTab = Tabs.Settings
 
--- Section: General Utilities
+-- MUST SET LIBRARY FIRST
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+
+SaveManager:SetFolder("FluentScriptHub/specific-game")
+InterfaceManager:SetFolder("FluentScriptHub")
+
+---------------------------------------------------
+-- General Utilities
+---------------------------------------------------
 local generalSection = SettingsTab:AddSection("General Utilities")
 
 generalSection:AddButton({
     Title = "INF YIELD",
     Description = "Loads Infinite Yield",
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+        loadstring(game:HttpGet(
+            "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
+        ))()
     end
 })
 
--- Section: Clock Settings
+---------------------------------------------------
+-- Clock Settings
+---------------------------------------------------
 local clockSection = SettingsTab:AddSection("Clock Settings")
 
 clockSection:AddInput("BrightnessClock", {
     Title = "Brightness",
-    Default = "",
     Placeholder = "Enter number..."
-}):OnChanged(function(brightness)
-    local b = tonumber(brightness)
-    if b then
-        game:GetService("Lighting").Brightness = b
+}):OnChanged(function(v)
+    local num = tonumber(v)
+    if num then
+        game:GetService("Lighting").Brightness = num
     end
 end)
 
 clockSection:AddInput("ClockTimeBox", {
     Title = "Clock Time",
-    Default = "",
     Placeholder = "Enter number..."
-}):OnChanged(function(time)
-    local t = tonumber(time)
-    if t then
-        game:GetService("Lighting").ClockTime = t
+}):OnChanged(function(v)
+    local num = tonumber(v)
+    if num then
+        game:GetService("Lighting").ClockTime = num
     end
 end)
 
--- Section: Theme Settings
+---------------------------------------------------
+-- Theme Settings
+---------------------------------------------------
 local themeSection = SettingsTab:AddSection("Theme Settings")
 
--- Theme Dropdown
 themeSection:AddDropdown("ThemeDropdown", {
     Title = "Select Theme",
-    Default = Window.Theme or "Dark",
-    Options = {"Dark", "Light"},
-    Multi = false
-}):OnChanged(function(selected)
-    Window:SetTheme(selected)
-    Fluent:Notify({
-        Title = "Navsploit",
-        Content = "Theme changed to: "..selected,
-        Duration = 3
-    })
-    SaveManager:Save() -- Save theme change
+    Default = "Dark",
+    Options = {"Dark", "Light"}
+}):OnChanged(function(theme)
+    Window:SetTheme(theme)
 end)
 
--- Accent Color Picker
 themeSection:AddColorPicker("AccentColor", {
     Title = "Accent Color",
-    Default = Window.AccentColor or Color3.fromRGB(0, 170, 255)
-}):OnChanged(function(color)
-    Window:SetAccentColor(color)
-    SaveManager:Save() -- Save accent change
+    Default = Color3.fromRGB(0,170,255)
+}):OnChanged(function(c)
+    Window:SetAccentColor(c)
 end)
 
--- Background Color Picker
 themeSection:AddColorPicker("BackgroundColor", {
     Title = "Background Color",
-    Default = Window.BackgroundColor or Color3.fromRGB(30, 30, 30)
-}):OnChanged(function(color)
-    Window:SetBackgroundColor(color)
-    SaveManager:Save() -- Save background change
+    Default = Color3.fromRGB(30,30,30)
+}):OnChanged(function(c)
+    Window:SetBackgroundColor(c)
 end)
 
--- Build interface & save configs
+---------------------------------------------------
+-- BUILD CONFIG UI (ONLY ONCE)
+---------------------------------------------------
 InterfaceManager:BuildInterfaceSection(SettingsTab)
 SaveManager:BuildConfigSection(SettingsTab)
-
 
 ---------------------------------------------------
 -- FINISH LOADING
 ---------------------------------------------------
-Fluent:Notify({Title="Navsploit v5", Content="Script Loaded Successfully!", Duration=8})
+Fluent:Notify({
+    Title = "Navsploit v5",
+    Content = "Script Loaded Successfully!",
+    Duration = 6
+})
+
 Window:SelectTab(1)
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetLibrary(Fluent)
-SaveManager:SetFolder("FluentScriptHub/specific-game")
-InterfaceManager:SetFolder("FluentScriptHub")
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
+
