@@ -17,6 +17,7 @@ local allowedUsers = {
  ["y2ofein"] = true,
  ["Jayvcccccccccc"] = true,
  ["nextcrisis"] = true,
+ ["643ny"] = true,
  ["Y3PVW"] = true,
 ["FNX_milo"] = true,
 ["StolenAmiris"] = true,
