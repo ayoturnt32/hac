@@ -1060,9 +1060,10 @@ local nuvsaAutoTuckToggle = NUVSA:AddToggle("NUVSAAutoTuck", {
 
 Tabs.RCFA:AddSection("OOB Controls")
 
-local oobScriptsDisabled = false
+local oobRemoved = false
+local oobModelBackup = nil
 
-local function toggleOOBScripts(state)
+local function getOOBParent()
     local field = workspace:FindFirstChild("Field")
     if not field then return end
 
@@ -1072,34 +1073,64 @@ local function toggleOOBScripts(state)
     local oobBlocks = oobArea:FindFirstChild("OOB SCRIPT BLOCKS")
     if not oobBlocks then return end
 
-    local model = oobBlocks:FindFirstChild("Model")
-    if not model then return end
-
-    local s1 = model:FindFirstChild("Script")
-    local s2 = model:FindFirstChild("Script2")
-
-    if s1 then s1.Disabled = state end
-    if s2 then s2.Disabled = state end
+    return oobBlocks
 end
 
-Tabs.RCFA:AddToggle("DisableOOBScripts", {
-    Title = "Disable OOB Scripts",
+local function removeOOBModel()
+    local parent = getOOBParent()
+    if not parent then return end
+
+    local model = parent:FindFirstChild("Model")
+    if not model then return end
+
+    -- Backup once
+    if not oobModelBackup then
+        oobModelBackup = model:Clone()
+    end
+
+    model:Destroy()
+end
+
+local function restoreOOBModel()
+    if not oobModelBackup then return end
+
+    local parent = getOOBParent()
+    if not parent then return end
+
+    -- Prevent double restore
+    if parent:FindFirstChild("Model") then return end
+
+    local restored = oobModelBackup:Clone()
+    restored.Parent = parent
+end
+
+Tabs.RCFA:AddToggle("ToggleOOBModel", {
+    Title = "Toggle OOB (Delete / Restore)",
     Default = false
 }):OnChanged(function(state)
-    oobScriptsDisabled = state
-    toggleOOBScripts(state)
+    oobRemoved = state
+
+    if state then
+        removeOOBModel()
+    else
+        restoreOOBModel()
+    end
 
     Fluent:Notify({
         Title = "Navsploit",
-        Content = "OOB Scripts "..(state and "OFF" or "ON"),
+        Content = "OOB "..(state and "REMOVED" or "RESTORED"),
         Duration = 2
     })
 end)
 
--- Reapply after respawn (keeps state)
+-- Keep state after respawn
 RCFA.CharacterAdded:Connect(function()
     task.wait(2)
-    toggleOOBScripts(oobScriptsDisabled)
+    if oobRemoved then
+        removeOOBModel()
+    else
+        restoreOOBModel()
+    end
 end)
 ---------------------------------------------------
 -- GUI KEYBIND BUTTON
