@@ -1257,8 +1257,12 @@ end)
 
 
 ---------------------------------------------------
--- SETTINGS TAB (ENHANCED)
+-- SETTINGS TAB (FIXED)
 ---------------------------------------------------
+-- Ensure the Settings tab exists
+if not Tabs.Settings then
+    Tabs.Settings = Window:AddTab("Settings")
+end
 local SettingsTab = Tabs.Settings
 
 -- MUST SET LIBRARY FIRST
@@ -1291,6 +1295,7 @@ generalSection:AddButton({
 ---------------------------------------------------
 -- HUB TOGGLE KEYBIND
 ---------------------------------------------------
+local UserInputService = game:GetService("UserInputService")
 local hubBind = Enum.KeyCode.LeftControl
 local waitingForHubBind = false
 
@@ -1321,7 +1326,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
     if gameProcessed then return end
     if input.KeyCode == hubBind or input.UserInputType == hubBind then
-        -- Toggle the hub window
         if Window.Minimized then
             Window:Unminimize()
         else
@@ -1398,3 +1402,4 @@ Fluent:Notify({
 })
 
 Window:SelectTab(1)
+
