@@ -1058,6 +1058,49 @@ local nuvsaAutoTuckToggle = NUVSA:AddToggle("NUVSAAutoTuck", {
     Default = false
 })
 
+Tabs.RCFA:AddSection("OOB Controls")
+
+local oobScriptsDisabled = false
+
+local function toggleOOBScripts(state)
+    local field = workspace:FindFirstChild("Field")
+    if not field then return end
+
+    local oobArea = field:FindFirstChild("OOB Area")
+    if not oobArea then return end
+
+    local oobBlocks = oobArea:FindFirstChild("OOB SCRIPT BLOCKS")
+    if not oobBlocks then return end
+
+    local model = oobBlocks:FindFirstChild("Model")
+    if not model then return end
+
+    local s1 = model:FindFirstChild("Script")
+    local s2 = model:FindFirstChild("Script2")
+
+    if s1 then s1.Disabled = state end
+    if s2 then s2.Disabled = state end
+end
+
+Tabs.RCFA:AddToggle("DisableOOBScripts", {
+    Title = "Disable OOB Scripts",
+    Default = false
+}):OnChanged(function(state)
+    oobScriptsDisabled = state
+    toggleOOBScripts(state)
+
+    Fluent:Notify({
+        Title = "Navsploit",
+        Content = "OOB Scripts "..(state and "OFF" or "ON"),
+        Duration = 2
+    })
+end)
+
+-- Reapply after respawn (keeps state)
+RCFA.CharacterAdded:Connect(function()
+    task.wait(2)
+    toggleOOBScripts(oobScriptsDisabled)
+end)
 ---------------------------------------------------
 -- GUI KEYBIND BUTTON
 ---------------------------------------------------
@@ -1073,6 +1116,7 @@ NUVSA:AddButton({
         })
     end
 })
+
 
 ---------------------------------------------------
 -- CORE LOGIC
@@ -1200,50 +1244,6 @@ RCFA.CharacterAdded:Connect(function(char)
     task.wait(1) -- wait for character to load
 end)
 
-
-
-Tabs.RCFA:AddSection("OOB Controls")
-
-local oobScriptsDisabled = false
-
-local function toggleOOBScripts(state)
-    local map = workspace:FindFirstChild("OOB Area", true)
-    if not map then return end
-
-    local oobModel = map:FindFirstChild("Model", true)
-    if not oobModel then return end
-
-    for _, obj in ipairs(oobModel:GetDescendants()) do
-        if obj:IsA("Script") and (obj.Name == "Script" or obj.Name == "Script2") then
-            obj.Disabled = state
-        end
-    end
-end
-
-Tabs.RCFA:AddToggle("DisableOOBScripts", {
-    Title = "Disable OOB Scripts",
-    Default = false
-}):OnChanged(function(state)
-    oobScriptsDisabled = state
-    toggleOOBScripts(state)
-
-    Fluent:Notify({
-        Title = "Navsploit",
-        Content = "OOB Scripts "..(state and "Disabled" or "Enabled"),
-        Duration = 2
-    })
-end)
-
--- Reapply after respawn
-RCFA.CharacterAdded:Connect(function()
-    task.wait(2)
-    if oobScriptsDisabled then
-        toggleOOBScripts(true)
-    end
-end)
----------------------------------------------------
--- RESPAWN SUPPORT
----------------------------------------------------
 
 
 ---------------------------------------------------
