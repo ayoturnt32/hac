@@ -1060,9 +1060,6 @@ local nuvsaAutoTuckToggle = NUVSA:AddToggle("NUVSAAutoTuck", {
 
 Tabs.RCFA:AddSection("OOB Controls")
 
-local oobRemoved = false
-local oobModelBackup = nil
-
 local function getOOBParent()
     local field = workspace:FindFirstChild("Field")
     if not field then return end
@@ -1081,48 +1078,30 @@ local function removeOOBModel()
     if not parent then return end
 
     local model = parent:FindFirstChild("Model")
-    if not model then return end
-
-    -- Backup once
-    if not oobModelBackup then
-        oobModelBackup = model:Clone()
+    if model then
+        model:Destroy()
     end
-
-    model:Destroy()
-end
-
-local function restoreOOBModel()
-    if not oobModelBackup then return end
-
-    local parent = getOOBParent()
-    if not parent then return end
-
-    -- Prevent double restore
-    if parent:FindFirstChild("Model") then return end
-
-    local restored = oobModelBackup:Clone()
-    restored.Parent = parent
 end
 
 Tabs.RCFA:AddToggle("ToggleOOBModel", {
-    Title = "Toggle OOB (Delete / Restore)",
+    Title = "Delete OOB Model",
     Default = false
 }):OnChanged(function(state)
-    oobRemoved = state
-
     if state then
         removeOOBModel()
-    else
-        restoreOOBModel()
+        Fluent:Notify({
+            Title = "Navsploit",
+            Content = "OOB REMOVED",
+            Duration = 2
+        })
     end
-
-    Fluent:Notify({
-        Title = "Navsploit",
-        Content = "OOB "..(state and "REMOVED" or "RESTORED"),
-        Duration = 2
-    })
 end)
 
+-- Keep state after respawn (just remove again if toggled)
+RCFA.CharacterAdded:Connect(function()
+    task.wait(2)
+    removeOOBModel()
+end)
 -- Keep state after respawn
 RCFA.CharacterAdded:Connect(function()
     task.wait(2)
