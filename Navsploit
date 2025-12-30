@@ -1257,6 +1257,8 @@ end)
 ---------------------------------------------------
 -- SETTINGS TAB (FIXED)
 ---------------------------------------------------
+local UserInputService = game:GetService("UserInputService")
+
 -- Ensure the Settings tab exists
 if not Tabs.Settings then
     Tabs.Settings = Window:AddTab("Settings")
@@ -1266,7 +1268,6 @@ local SettingsTab = Tabs.Settings
 -- MUST SET LIBRARY FIRST
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
-
 SaveManager:SetFolder("FluentScriptHub/specific-game")
 InterfaceManager:SetFolder("FluentScriptHub")
 
@@ -1290,10 +1291,6 @@ generalSection:AddButton({
     end
 })
 
----------------------------------------------------
--- HUB TOGGLE KEYBIND
----------------------------------------------------
-local UserInputService = game:GetService("UserInputService")
 local hubBind = Enum.KeyCode.LeftControl
 local waitingForHubBind = false
 
@@ -1310,28 +1307,6 @@ generalSection:AddButton({
     end
 })
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if waitingForHubBind then
-        hubBind = input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode or input.UserInputType
-        waitingForHubBind = false
-        Fluent:Notify({
-            Title = "Navsploit",
-            Content = "Hub toggle key set to: "..tostring(hubBind),
-            Duration = 2
-        })
-        return
-    end
-
-    if gameProcessed then return end
-    if input.KeyCode == hubBind or input.UserInputType == hubBind then
-        if Window.Minimized then
-            Window:Unminimize()
-        else
-            Window:Minimize()
-        end
-    end
-end)
-
 ---------------------------------------------------
 -- CLOCK SETTINGS
 ---------------------------------------------------
@@ -1344,7 +1319,6 @@ clockSection:AddInput("BrightnessClock", {
     local num = tonumber(v)
     if num then
         game:GetService("Lighting").Brightness = num
-        Fluent:Notify({Title="Navsploit", Content="Brightness set to "..num, Duration=2})
     end
 end)
 
@@ -1355,7 +1329,6 @@ clockSection:AddInput("ClockTimeBox", {
     local num = tonumber(v)
     if num then
         game:GetService("Lighting").ClockTime = num
-        Fluent:Notify({Title="Navsploit", Content="Clock Time set to "..num, Duration=2})
     end
 end)
 
@@ -1370,7 +1343,6 @@ themeSection:AddDropdown("ThemeDropdown", {
     Options = {"Dark", "Light"}
 }):OnChanged(function(theme)
     Window:SetTheme(theme)
-    Fluent:Notify({Title="Navsploit", Content="Theme changed to "..theme, Duration=2})
 end)
 
 themeSection:AddColorPicker("AccentColor", {
@@ -1394,6 +1366,31 @@ InterfaceManager:BuildInterfaceSection(SettingsTab)
 SaveManager:BuildConfigSection(SettingsTab)
 
 ---------------------------------------------------
+-- HUB TOGGLE INPUT LISTENER
+---------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if waitingForHubBind then
+        hubBind = input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode or input.UserInputType
+        waitingForHubBind = false
+        Fluent:Notify({
+            Title = "Navsploit",
+            Content = "Hub toggle key set to: "..tostring(hubBind),
+            Duration = 2
+        })
+        return
+    end
+
+    if gameProcessed then return end
+    if input.KeyCode == hubBind or input.UserInputType == hubBind then
+        if Window.Minimized then
+            Window:Unminimize()
+        else
+            Window:Minimize()
+        end
+    end
+end)
+
+---------------------------------------------------
 -- FINISH LOADING
 ---------------------------------------------------
 Fluent:Notify({
@@ -1403,4 +1400,3 @@ Fluent:Notify({
 })
 
 Window:SelectTab(1)
-
