@@ -1254,8 +1254,6 @@ RCFA.CharacterAdded:Connect(function(char)
     task.wait(1) -- wait for character to load
 end)
 
-
-
 ---------------------------------------------------
 -- SETTINGS TAB (FIXED)
 ---------------------------------------------------
@@ -1346,6 +1344,7 @@ clockSection:AddInput("BrightnessClock", {
     local num = tonumber(v)
     if num then
         game:GetService("Lighting").Brightness = num
+        Fluent:Notify({Title="Navsploit", Content="Brightness set to "..num, Duration=2})
     end
 end)
 
@@ -1356,6 +1355,7 @@ clockSection:AddInput("ClockTimeBox", {
     local num = tonumber(v)
     if num then
         game:GetService("Lighting").ClockTime = num
+        Fluent:Notify({Title="Navsploit", Content="Clock Time set to "..num, Duration=2})
     end
 end)
 
@@ -1370,6 +1370,7 @@ themeSection:AddDropdown("ThemeDropdown", {
     Options = {"Dark", "Light"}
 }):OnChanged(function(theme)
     Window:SetTheme(theme)
+    Fluent:Notify({Title="Navsploit", Content="Theme changed to "..theme, Duration=2})
 end)
 
 themeSection:AddColorPicker("AccentColor", {
