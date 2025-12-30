@@ -1257,7 +1257,7 @@ end)
 
 
 ---------------------------------------------------
--- SETTINGS TAB (FIXED)
+-- SETTINGS TAB (ENHANCED)
 ---------------------------------------------------
 local SettingsTab = Tabs.Settings
 
@@ -1269,7 +1269,7 @@ SaveManager:SetFolder("FluentScriptHub/specific-game")
 InterfaceManager:SetFolder("FluentScriptHub")
 
 ---------------------------------------------------
--- General Utilities
+-- GENERAL UTILITIES
 ---------------------------------------------------
 local generalSection = SettingsTab:AddSection("General Utilities")
 
@@ -1277,14 +1277,61 @@ generalSection:AddButton({
     Title = "INF YIELD",
     Description = "Loads Infinite Yield",
     Callback = function()
-        loadstring(game:HttpGet(
-            "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"
-        ))()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+        end)
+        Fluent:Notify({
+            Title = "Navsploit",
+            Content = "Inf Yield Loaded",
+            Duration = 2
+        })
     end
 })
 
 ---------------------------------------------------
--- Clock Settings
+-- HUB TOGGLE KEYBIND
+---------------------------------------------------
+local hubBind = Enum.KeyCode.LeftControl
+local waitingForHubBind = false
+
+generalSection:AddButton({
+    Title = "Set Hub Toggle Key",
+    Description = "Press any key or controller button",
+    Callback = function()
+        waitingForHubBind = true
+        Fluent:Notify({
+            Title = "Navsploit",
+            Content = "Press a key or controller button to bind the hub toggle...",
+            Duration = 3
+        })
+    end
+})
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if waitingForHubBind then
+        hubBind = input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode or input.UserInputType
+        waitingForHubBind = false
+        Fluent:Notify({
+            Title = "Navsploit",
+            Content = "Hub toggle key set to: "..tostring(hubBind),
+            Duration = 2
+        })
+        return
+    end
+
+    if gameProcessed then return end
+    if input.KeyCode == hubBind or input.UserInputType == hubBind then
+        -- Toggle the hub window
+        if Window.Minimized then
+            Window:Unminimize()
+        else
+            Window:Minimize()
+        end
+    end
+end)
+
+---------------------------------------------------
+-- CLOCK SETTINGS
 ---------------------------------------------------
 local clockSection = SettingsTab:AddSection("Clock Settings")
 
@@ -1309,7 +1356,7 @@ clockSection:AddInput("ClockTimeBox", {
 end)
 
 ---------------------------------------------------
--- Theme Settings
+-- THEME SETTINGS
 ---------------------------------------------------
 local themeSection = SettingsTab:AddSection("Theme Settings")
 
@@ -1351,4 +1398,3 @@ Fluent:Notify({
 })
 
 Window:SelectTab(1)
-
