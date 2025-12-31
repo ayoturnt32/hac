@@ -9,9 +9,12 @@ local allowedUsers = {
     ["3251903122"] = true,
  ["CobainK1ller"] = true,
  ["pjkeepgettingbanned"] = true,
+ ["pjkeepgettingbanned"] = true,
 ["Bankrollpainful"] = true,
 ["movingwithchrist"] = true,
 ["HAHHAIBANEDALLL"] = true,
+["GodspeedDTRK"] = true,
+
   ["Pacablly"] = true,
   ["davids1998"] = true,
  ["ixrattss"] = true,
