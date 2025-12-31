@@ -12,6 +12,8 @@ local allowedUsers = {
 ["Bankrollpainful"] = true,
 ["movingwithchrist"] = true,
   ["Pacablly"] = true,
+  ["davids1998"] = true,
+
   ["pjkeepgettingbanned"] = true, 
   ["ddriIIy"] = true,
  ["anchorbeingken"] = true,
