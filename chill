@@ -784,27 +784,46 @@ RCFA.CharacterAdded:Connect(function(char)
 end)
 
 
+---------------------------------------------------
+-- FLUENT NOTIFICATION CONFIG (SET ONCE)
+---------------------------------------------------
+Fluent.NotificationConfig = {
+    Position = UDim2.fromScale(0.02, 0.92), -- bottom-left
+    AnchorPoint = Vector2.new(0, 1),
+
+    Size = UDim2.fromOffset(240, 48), -- small notification
+    Padding = 6,
+    Spacing = 5,
+
+    Transparency = 0.1
+}
+
+---------------------------------------------------
+-- CHARACTER ADDED HANDLERS
+---------------------------------------------------
 RCFA.CharacterAdded:Connect(function()
     task.wait(1)
     setupBV()
 end)
-
 
 RCFA.CharacterAdded:Connect(function(char)
     task.wait(1)
     if rbStunEnabled then
         local root = char:FindFirstChild("HumanoidRootPart")
         local humanoid = char:FindFirstChildOfClass("Humanoid")
+
         if root and humanoid then
             if root:FindFirstChild("Hitbox") then
                 root.Hitbox.CanCollide = false
                 root.Hitbox.CanTouch = false
             end
+
             if not char:FindFirstChild("CharacterValues") then
                 local cv = Instance.new("Folder")
                 cv.Name = "CharacterValues"
                 cv.Parent = char
             end
+
             local cv = char.CharacterValues
             if not cv:FindFirstChild("Invincible") then
                 local inv = Instance.new("BoolValue")
@@ -814,16 +833,18 @@ RCFA.CharacterAdded:Connect(function(char)
             else
                 cv.Invincible.Value = true
             end
+
             humanoid.PlatformStand = true
         end
     end
 end)
+
 ---------------------------------------------------
 -- OL/DL (BODYVELOCITY DESTROY) WITH FLEXIBLE KEYBIND
 ---------------------------------------------------
 local BVTable = {}
 local bvEnabled = true
-local bvBind = Enum.KeyCode.LeftBracket -- default key
+local bvBind = Enum.KeyCode.LeftBracket
 local waitingForBVBind = false
 
 -- GUI Toggle
@@ -838,10 +859,11 @@ Tabs.RCFA:AddButton({
     Description = "Press any key or controller button",
     Callback = function()
         waitingForBVBind = true
+
         Fluent:Notify({
             Title = "Navsploit",
             Content = "Press any key or controller button to bind OL/DL...",
-            Duration = 3
+            Duration = 0.3
         })
     end
 })
@@ -851,13 +873,15 @@ bvToggle:OnChanged(function(state)
     bvEnabled = state
 end)
 
--- Main loop to destroy BodyVelocity
+---------------------------------------------------
+-- MAIN LOOP: DESTROY BODYVELOCITY
+---------------------------------------------------
 task.spawn(function()
     while task.wait() and RCFA.Character do
         if bvEnabled then
             local char = RCFA.Character
             if char then
-                for _,v in pairs(char:GetDescendants()) do
+                for _, v in pairs(char:GetDescendants()) do
                     if v:IsA("BodyVelocity") and v.Name ~= RCFA.Name then
                         table.insert(BVTable, v:Clone())
                         v:Destroy()
